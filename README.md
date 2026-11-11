@@ -13,7 +13,7 @@
 
 1. 把这个 skill 装到你的 agent 上（Claude Code：`~/.claude/skills/lights-out-factory/`；Codex：`~/.codex/skills/lights-out-factory/`）
 2. 对 agent 说「帮我们业务建一个 skill」，把手上的表全丢过去（排期、产品卖点、QC 标准、以前的脚本、交付命名样例……xlsx / csv / 飞书链接都行），再讲清你们的流程
-3. agent 照 [references/onboarding.md](references/onboarding.md)：看清每份资料 → 一次问清流程里看不出来的事 → 建出一个新的 skill 目录（只属于你们业务）→ 用真实的一天写一条脚本给你看 → 你认可了就交给你
+3. agent 照 [references/onboarding.md](references/onboarding.md)：看清每份资料 → 一次问清流程里看不出来的事 → 建出一个只属于你们业务的 skill，**直接装进你的 agent** → 用真实的一天写一条脚本给你看 → 你认可了就交给你
 
 之后每天对 agent 说「跑今天的排期」「审完了，开始生产」就用你们自己的 skill。新 skill 里的脚本和文档都是你们自己的，想怎么改就怎么改（[references/adapt.md](references/adapt.md)）。
 
@@ -22,7 +22,7 @@
 手动建也可以：
 
 ```bash
-python3 -I scripts/new_business.py --key dove --brand 多芬 --out ~/skills/dove-daily-batch \
+python3 -I scripts/new_business.py --key dove --brand 多芬 --agent claude \
     --products bodywash=多芬沐浴露 --sources <你们的文件>
 ```
 

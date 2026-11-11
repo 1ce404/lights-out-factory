@@ -2,7 +2,7 @@
 
 业务同学把手上的表全塞过来、讲清自己的流程，**Agent 建出这个业务专属的 skill**：一份完整能跑的工厂，事实来自他们的资料，流程按他们说的来。这份文档是 Agent 的操作步骤；业务同学不用看配置字段。
 
-**不改这个模板仓库本身**。每个业务建在自己的新目录里（默认 `~/skills/<key>-daily-batch`，或用户指定的地方）。
+**不改这个模板仓库本身**。每个业务的 skill 是一个新目录，**直接装进用户正在用的 agent**（`--agent claude` 装到 `~/.claude/skills/<key>-daily-batch/`，`--agent codex` 装到 `~/.codex/skills/<key>-daily-batch/`；两个都用就 `--agent claude codex`，第二个是链接，只有一份）。你自己是哪个 agent 就填哪个；用户说要放别处才用 `--out`。
 
 ## 第 1 步：收东西，看清楚
 
@@ -39,11 +39,11 @@ python3 -I scripts/inspect_sources.py <文件或文件夹> [...]
 ## 第 3 步：建出来
 
 ```bash
-python3 -I scripts/new_business.py --key <英文key> --brand <品牌名> --out <目录> \
+python3 -I scripts/new_business.py --key <英文key> --brand <品牌名> --agent <claude|codex> \
     --products <key>=<产品全名> ... --sources <他们给的文件或文件夹> ...
 ```
 
-得到一个完整的 skill：脚本、参考文档、空的 config 和 gold，资料拷进 `sources/`。然后**在新目录里**填：
+得到一个完整的 skill，已经装在 agent 的 skills 目录里：脚本、参考文档、空的 config 和 gold，资料拷进 `sources/`。然后**在新目录里**填：
 
 1. **`config/<key>.json`**：只写和默认不一样的（默认值见 `scripts/common.py` 的 `BRAND_DEFAULTS`，字段说明见 [adapt.md](adapt.md)）。`sources` 每个 key 指向归好类的文件（skill 里的文件写 `sources/<文件名>`；每天会更新的用飞书或网页链接）
 2. **`config/<key>/<产品>.json`**：从产品资料抄事实，每条写出处（`_note`、`mechanism.source`、`verified_on`）。资料里没有的不编，写进 `open_questions`
@@ -81,6 +81,6 @@ python3 -I scripts/clipo_batch.py preflight --config <key> --run $R          # �
 
 ## 第 5 步：交出去
 
-- 告诉用户新 skill 在哪、怎么装（Claude Code 放 `~/.claude/skills/<name>/`，Codex 放 `~/.codex/skills/<name>/`），以后对 agent 说什么话就会用它
+- 告诉用户：新 skill 已经装好、在哪个目录；**新开一个对话**说什么话就会用它（`SKILL.md` 的 `description` 里写的那些话）
+- 同一个业务的其他同事也要用：把这个目录发给他们，放进各自的 `~/.claude/skills/` 或 `~/.codex/skills/`
 - 列出 `open_questions`：还缺的资料、你猜了没确认的
-- 要放 GitHub 先问用户：仓库名、公开还是私有（资料里常有客户文件，默认私有）

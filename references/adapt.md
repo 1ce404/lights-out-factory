@@ -9,15 +9,15 @@
 ```bash
 git clone https://github.com/1ce404/lights-out-factory.git
 cd lights-out-factory
-python3 -I scripts/new_business.py --key dove --brand 多芬 --out ~/skills/dove-daily-batch \
+python3 -I scripts/new_business.py --key dove --brand 多芬 --agent claude \
     --products bodywash=多芬沐浴露 --sources <你们的排期、资料文件>
 ```
 
-得到一个只属于你们业务的 skill 目录（不带示例数据），下面都在那个目录里改。
+得到一个只属于你们业务的 skill，已经装在 `~/.claude/skills/dove-daily-batch/`（`--agent codex` 装到 Codex），不带示例数据。下面都在那个目录里改。
 
 然后改 `SKILL.md` 开头的 `name` 和 `description`：`name` 换成你的业务名（如 `dove-daily-batch`），`description` 写清楚**用户说什么话时用它**（「跑今天的排期」「多芬今天的脚本」），agent 靠这一段决定什么时候调用这个 skill。
 
-装到 agent 上：Claude Code 放 `~/.claude/skills/<name>/`，Codex 放 `~/.codex/skills/<name>/`（或在项目里放 `.claude/skills/`）。
+
 
 ## 1. 业务 config：`config/<业务>.json`
 

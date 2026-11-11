@@ -3,10 +3,15 @@
 config, its source files copied in, and no example data. The agent then fills it from what the business
 handed over (references/onboarding.md).
 
-    python3 scripts/new_business.py --key dove --brand 多芬 --out ~/skills/dove-daily-batch \
+    python3 scripts/new_business.py --key dove --brand 多芬 --agent claude \
         [--products bodywash=多芬沐浴露 shampoo=多芬洗发水] [--sources <file or folder> ...]
 
-Writes <out>/ with SKILL.md (name/description to rewrite), config/<key>.json, config/<key>/<product>.json,
+--agent installs it where that agent looks for skills, so the user can use it right away:
+    claude → ~/.claude/skills/<key>-daily-batch/      codex → ~/.codex/skills/<key>-daily-batch/
+With two agents (--agent claude codex) the skill lives in the first folder and the second gets a link to it,
+so there is one copy to keep up to date. --out <folder> builds somewhere else instead (not installed).
+
+Writes the skill folder with SKILL.md (name/description to rewrite), config/<key>.json, config/<key>/<product>.json,
 gold/<key>.json (empty), sources/ (copies of the files given), and everything in scripts/ and references/.
 Refuses to write into a folder that already has files.
 """
@@ -18,21 +23,31 @@ from pathlib import Path
 
 TEMPLATE = Path(__file__).resolve().parent.parent
 KEEP = ["scripts", "references", ".gitignore"]
+AGENTS = {"claude": ".claude/skills", "codex": ".codex/skills"}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--key", required=True, help="English key for the business, e.g. dove (file names, brief ownership)")
     ap.add_argument("--brand", required=True, help="brand name as written in copy, e.g. 多芬")
-    ap.add_argument("--out", required=True, help="folder for the new skill")
+    ap.add_argument("--agent", nargs="+", choices=sorted(AGENTS), help="install into this agent's skills folder (the agent you are)")
+    ap.add_argument("--out", help="build in this folder instead of installing")
     ap.add_argument("--products", nargs="*", default=[], help="key=产品全名 for each product")
     ap.add_argument("--sources", nargs="*", default=[], help="files or folders the business handed over")
     args = ap.parse_args()
     if not re.fullmatch(r"[a-z][a-z0-9_]*", args.key):
         raise SystemExit("--key 只用小写字母、数字、下划线，字母开头")
-    out = Path(args.out).expanduser().resolve()
-    if out.exists() and any(out.iterdir()):
-        raise SystemExit(f"{out} 已经有文件了，换个目录（不覆盖）")
+    if not args.agent and not args.out:
+        raise SystemExit("要么 --agent claude / codex（装到 agent 里，推荐），要么 --out <目录>")
+    name = f"{args.key}-daily-batch"
+    homes = [Path.home() / AGENTS[a] / name for a in args.agent or []]
+    out = Path(args.out).expanduser().resolve() if args.out else homes[0]
+    links = [h for h in homes if h != out]
+    for d in [out] + links:
+        if d.exists() or d.is_symlink():
+            if d == out and d.is_dir() and not d.is_symlink() and not any(d.iterdir()):
+                continue
+            raise SystemExit(f"{d} 已经有了：这个业务可能建过（换个 --key，或先看看里面是什么，不覆盖）")
     out.mkdir(parents=True, exist_ok=True)
 
     for name in KEEP:
@@ -96,6 +111,14 @@ def main():
     print(f"建好了 {out}")
     print(f"  config/{args.key}.json、config/{args.key}/（{len(args.products)} 个产品）、gold/{args.key}.json、"
           f"sources/（{len(sources)} 个文件）、scripts/、references/")
+    for l in links:
+        l.parent.mkdir(parents=True, exist_ok=True)
+        l.symlink_to(out, target_is_directory=True)
+        print(f"  {l} → 链接到上面这份（只有一份，改哪边都一样）")
+    if args.agent:
+        print(f"已装进 {'、'.join(args.agent)}：新开一个对话，说「跑{args.brand}今天的排期」就会用它")
+    else:
+        print(f"没有装进 agent：要用就把 {out} 放到 ~/.claude/skills/ 或 ~/.codex/skills/ 下")
     print("下一步：照模板的 references/onboarding.md 第 3 步把资料填进新 skill 的 config，改 SKILL.md 的 description 和流程")
 
 
