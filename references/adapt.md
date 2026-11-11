@@ -1,14 +1,19 @@
 # 改成你自己的业务
 
-这个仓库是一个完整能跑的模板：**整份复制一套，改成你的业务**。改的顺序是 config → 范本 → 写法 → 流程；越往后越少需要改。
+这个仓库是一个完整能跑的模板：**整份复制一套，改成你的业务**。最省事的是把资料交给 agent，让它照 [onboarding.md](onboarding.md) 建；这份文档是手动改的说明，也是 agent 填 config 时查字段用的。改的顺序是 config → 范本 → 写法 → 流程；越往后越少需要改。
+
+**config 只写和默认不一样的。** 最小能跑的 config 只有一个品牌名，每个产品只有一个产品名；其它都有默认值（`scripts/common.py` 的 `BRAND_DEFAULTS` / `PRODUCT_DEFAULTS`）。`config/example.json` 是写满的样子，用来查字段。
 
 ## 0. 复制
 
 ```bash
-git clone https://github.com/1ce404/lights-out-factory.git my-business-factory
-cd my-business-factory
-rm -rf .git && git init            # 变成你自己的仓库
+git clone https://github.com/1ce404/lights-out-factory.git
+cd lights-out-factory
+python3 -I scripts/new_business.py --key dove --brand 多芬 --out ~/skills/dove-daily-batch \
+    --products bodywash=多芬沐浴露 --sources <你们的排期、资料文件>
 ```
+
+得到一个只属于你们业务的 skill 目录（不带示例数据），下面都在那个目录里改。
 
 然后改 `SKILL.md` 开头的 `name` 和 `description`：`name` 换成你的业务名（如 `dove-daily-batch`），`description` 写清楚**用户说什么话时用它**（「跑今天的排期」「多芬今天的脚本」），agent 靠这一段决定什么时候调用这个 skill。
 
@@ -22,8 +27,8 @@ rm -rf .git && git init            # 变成你自己的仓库
 |---|---|
 | `brand` / `brand_key` / `brand_tag` | 品牌名 / 文件名用的英文 key / 交付命名里的品牌段 |
 | `sources` | 你的排期、脚本合集、QC 文档。飞书链接（要装 `lark-cli`）、http 链接、本地文件都行；想多拉一份资料就加一个 key |
-| `schedule.columns` / `schedule.date_formats` | 你们排期表的表头和日期写法。没有排期表就把 `daily_quota` 写成每天固定的产品和条数 |
-| `store_to_product` | 排期「店铺」（或「内容方向」）里的字 → 产品 key |
+| `schedule.columns` | 一般不用写：表头含日期 / 产品 / 方向 / 卖点 / 人群 / 数量这些字的列自动认，各种日期写法都认。认不出的列才写「表头: 字段」。没有排期表就把 `daily_quota` 写成每天固定的产品和条数 |
+| `store_to_product` | 排期「产品 / 店铺」列里的字 → 产品 key。不写就按产品名去认 |
 | `brief_size` / `generate_factor` | 一个 brief 几条 / 一次多生成几倍 |
 | `writing.subject` | 开头要落到的问题，用你们品类的说法（头发状态 / 皮肤状态 / 厨房油污…） |
 | `banned_words` | 广告法通用的留着，加上你们 QC 文档、客户卡审的词 |

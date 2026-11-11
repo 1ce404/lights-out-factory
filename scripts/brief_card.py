@@ -85,6 +85,8 @@ def card(cfg, run, brief, today):
            f"测试卖点：{brief.get('selling_point') or '（无，写机制）'}　人群：{brief.get('audience') or '通用'}（人群是标签，不念）"]
     if brief.get("schedule_notes"):
         out.append(f"排期备注：{brief['schedule_notes']}")
+    for k, v in (brief.get("schedule_extra") or {}).items():  # every other column of this schedule row
+        out.append(f"排期「{k}」：{v}")
     if brief.get("template"):
         out.append(f"用户给的结构：{brief['template']}（照这个分段）")
     out += ["",
@@ -94,8 +96,9 @@ def card(cfg, run, brief, today):
             f"  ② 引产品：一句话带出全名「{prod['full_name']}」（尽量第 3 段才出现）",
             f"  ③ 卖点：{sp.get('say') or '（config 没写，按产品卖点表）'}",
             "  ④ 效果：用完看得见、摸得到的结果",
-            f"  ⑤ 机制 + CTA：{'、'.join(prod['mechanism']['spoken'])}"
-            f"{'，带「' + camp['name'] + '」' if in_camp else ''}，结尾「{'/'.join(prod['cta_required'])}」"]
+            f"  ⑤ 机制 + CTA：{'、'.join(prod['mechanism']['spoken']) or '（config 没写机制，按资料）'}"
+            f"{'，带「' + camp['name'] + '」' if in_camp else ''}"
+            f"{'，结尾「' + '/'.join(prod['cta_required']) + '」' if prod['cta_required'] else ''}"]
     if sp.get("must_mention"):
         out.append(f"  卖点必须出现：{'、'.join(sp['must_mention'])}（第一次讲卖点那句要带产品全名）")
     out.append("  每句写 2~3 个说法（主版 text + alt），语气各一版：口语带情绪 / 正常叙述 / 偏书面。③⑤ 可以沿用固定说法")
@@ -109,7 +112,7 @@ def card(cfg, run, brief, today):
         out += [f"  - {k}：{v}" for k, v in prod["footage"].items() if not k.startswith("_") and v != "同 hook"]
     banned = [w for w in cfg["banned_words"]["error"] + prod.get("banned_words", []) + prod.get("warn_words", [])
               if w not in prod.get("allow_words", [])]
-    out.append(f"不能写：{'、'.join(dict.fromkeys(banned))}、具体时长（几小时 / 几天）")
+    out.append(f"不能写：{'、'.join(list(dict.fromkeys(banned)) + ['具体时长（几小时 / 几天）'])}")
     plat = prod.get("_platform_copy_rules")
     if plat:
         out.append("平台提示词里的文案规则（video_script_create）：")
@@ -143,6 +146,9 @@ def card(cfg, run, brief, today):
 
 def platform_rules(cfg, keys):
     """The copy rules in each product's platform prompt video_script_create (read-only; best effort offline)."""
+    keys = [k for k in keys if cfg["products"][k].get("clipo_product_id")]
+    if not keys:
+        return
     try:
         import clipo_batch as cb
         cb.BASE = cfg["clipo"]["base_url"].rstrip("/") + "/api/v1"

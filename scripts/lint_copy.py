@@ -299,7 +299,7 @@ def lint_script(texts, segs, brief, cfg, product):
     if sum(bool(timeline.search(t)) for t in texts) >= 2:
         issues.append(("error", "文案里有早上 / 下班这类时间线：容易被读成用了以后又变差，不写时间线"))
     cta = [t for s, t in zip(segs, texts) if s.get("role") == "cta"] or texts[-1:]
-    if not any(p in cta[-1] for p in product["cta_required"]):
+    if product["cta_required"] and not any(p in cta[-1] for p in product["cta_required"]):
         issues.append(("error", f"结尾没有「{'/'.join(product['cta_required'])}」"))
     named = [k for k, t in enumerate(texts) if any(a in t for a in product["name_aliases"])]
     if not named:

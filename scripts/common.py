@@ -18,19 +18,171 @@ def load_config(path_or_key):
     cfg.setdefault("products", {})
     for f in sorted((p.parent / p.stem).glob("*.json")):
         cfg["products"][f.stem] = json.loads(f.read_text())
+    return with_defaults(cfg, p.stem)
+
+
+# Everything a config may leave out. A business only has to write what differs (config/minimal.json is the
+# smallest working one: a brand name and a product name). Scripts can then read cfg["x"] without checks.
+BRAND_DEFAULTS = {
+    "brand_tag": None,             # → brand
+    "sources": {},
+    "schedule": {},                # columns / date_formats, see parse_schedule.py
+    "daily_quota": None,
+    "store_to_product": {},
+    "brief_prefix": "B",
+    "brief_size": 10,
+    "generate_factor": 2,
+    "generate_chunk": 15,
+    "writing": {},
+    "banned_words": {"error": [], "warn": [], "regex_error": [], "regex_warn": [], "scene_warn": [], "allow_exceptions": []},
+    "copy_limits": {"clause_hard_max": 20, "clause_warn_max": 12, "clause_warn_min": 1, "combo_chars_min": 60,
+                    "combo_chars_max": 200, "chars_per_second": 5.5, "history_days": 7, "name_not_before": 0,
+                    "opening_similar_max": 0.5},
+    "campaign": None,
+    "clipo": {"base_url": "https://clipo-remix.tezign.com"},
+    "watermark": {"add": True, "position": "bottom_right", "mode": "global"},
+    "tts": {},
+    "banned_footage_words": [],
+    "naming": "{date}-{brief_no}-V{n:02d}-{product}-{selling_point}",
+    "delivery_naming": None,       # None → same as naming without -V
+    "delivery_group_naming": "{date}-{brand_tag}",
+    "direction_tags": {},
+    "direction_notes": {},
+    "review": {},
+    "open_questions": [],
+}
+PRODUCT_DEFAULTS = {
+    "name_aliases": None,          # → [full_name]
+    "short_name": None,            # → full_name
+    "collection_labels": None,     # → [full_name]
+    "clipo_product_id": None,
+    "default_selling_point": "",
+    "selling_points": {},
+    "mechanism": {"spoken": [], "allowed_numbers": []},
+    "cta_required": [],            # empty = no required ending word
+    "banned_words": [], "warn_words": [], "allow_words": [], "foreign_claims": [], "keep_terms": [],
+    "speaker_warn": [], "rules": [], "footage": {}, "footage_tags": [],
+    "ingredient_terms": [], "ingredient_footage": [],
+}
+
+
+def with_defaults(cfg, key):
+    for k, v in BRAND_DEFAULTS.items():
+        if isinstance(v, dict) and isinstance(cfg.get(k), dict):
+            cfg[k] = {**v, **cfg[k]}
+        else:
+            cfg.setdefault(k, json.loads(json.dumps(v)))
+    cfg.setdefault("brand_key", key)
+    cfg.setdefault("brand", cfg["brand_key"])
+    cfg["brand_tag"] = cfg["brand_tag"] or cfg["brand"]
+    for pk, prod in cfg["products"].items():
+        prod.setdefault("full_name", pk)
+        for k, v in PRODUCT_DEFAULTS.items():
+            if isinstance(v, dict) and isinstance(prod.get(k), dict):
+                prod[k] = {**v, **prod[k]}
+            else:
+                prod.setdefault(k, json.loads(json.dumps(v)))
+        prod["name_aliases"] = prod["name_aliases"] or [prod["full_name"]]
+        prod["short_name"] = prod["short_name"] or prod["full_name"]
+        prod["collection_labels"] = prod["collection_labels"] or [prod["full_name"]]
+    if not cfg["store_to_product"]:  # schedule rows name the product: match on product names
+        cfg["store_to_product"] = {n: pk for pk, prod in cfg["products"].items()
+                                   for n in [pk, prod["full_name"], prod["short_name"]] + prod["name_aliases"]}
     return cfg
 
 
 def fetch_doc(src):
     """Text of one source: a Feishu/Lark wiki or docx link (needs lark-cli), any other http(s) URL, or a local
-    file path (relative paths are relative to the current directory). Add your own kind here (Notion, Google Docs…)."""
+    file path (relative to the current directory, else to the skill folder). Add your own kind here (Notion, Google Docs…)."""
     if re.match(r"https?://[^/]*(feishu|larksuite)\.", src):
         return lark_fetch(src)
     if re.match(r"https?://", src):
         import urllib.request
         with urllib.request.urlopen(src, timeout=60) as r:
             return r.read().decode("utf-8", "replace")
-    return Path(src).expanduser().read_text()
+    p = Path(src).expanduser()
+    if not p.is_absolute() and not p.exists() and (SKILL_DIR / p).exists():
+        p = SKILL_DIR / p  # files kept inside the skill (sources/…, examples/…)
+    return read_file(p)
+
+
+def read_file(path):
+    """A local file as text the other scripts read: .xlsx / .csv / .tsv become one markdown pipe table per sheet
+    (under a ### sheet-name heading); anything else (.md / .txt / .json / .html) is read as is."""
+    suffix = path.suffix.lower()
+    if suffix == ".xlsx":
+        return "\n\n".join(f"### {name}\n\n" + to_markdown(rows) for name, rows in xlsx_sheets(path) if rows)
+    if suffix in (".csv", ".tsv"):
+        import csv
+        raw = path.read_bytes()
+        text = next(raw.decode(e) for e in ("utf-8-sig", "gb18030", "latin-1") if _decodes(raw, e))
+        return to_markdown(list(csv.reader(text.splitlines(), delimiter="\t" if suffix == ".tsv" else ",")))
+    return path.read_text()
+
+
+def _decodes(raw, enc):
+    try:
+        raw.decode(enc)
+        return True
+    except UnicodeDecodeError:
+        return False
+
+
+def to_markdown(rows):
+    rows = [[str(c).replace("|", "／").replace("\n", "<br/>").strip() for c in r] for r in rows if any(str(c).strip() for c in r)]
+    if not rows:
+        return ""
+    w = max(len(r) for r in rows)
+    rows = [r + [""] * (w - len(r)) for r in rows]
+    return "\n".join(["| " + " | ".join(rows[0]) + " |", "|" + "---|" * w] + ["| " + " | ".join(r) + " |" for r in rows[1:]])
+
+
+def xlsx_sheets(path):
+    """[(sheet name, rows)] from an .xlsx with the standard library only (no openpyxl). Merged cells are
+    filled with their top-left value; dates stay Excel serial numbers (parse_schedule reads them)."""
+    import zipfile
+    import xml.etree.ElementTree as ET
+    ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+          "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships"}
+    z = zipfile.ZipFile(path)
+    shared = []
+    if "xl/sharedStrings.xml" in z.namelist():
+        for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall("m:si", ns):
+            shared.append("".join(t.text or "" for t in si.iter(f"{{{ns['m']}}}t")))
+    rels = {r.get("Id"): r.get("Target") for r in ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))}
+    col = lambda ref: sum((ord(ch) - 64) * 26 ** i for i, ch in enumerate(reversed(re.match(r"[A-Z]+", ref)[0]))) - 1
+    out = []
+    for sh in ET.fromstring(z.read("xl/workbook.xml")).find("m:sheets", ns):
+        target = rels[sh.get(f"{{{ns['r']}}}id")].lstrip("/")
+        root = ET.fromstring(z.read(target if target.startswith("xl/") else "xl/" + target))
+        cells = {}
+        for row in root.iter(f"{{{ns['m']}}}row"):
+            for c in row.findall("m:c", ns):
+                v = c.find("m:v", ns)
+                t = c.get("t")
+                if t == "inlineStr":
+                    val = "".join(x.text or "" for x in c.iter(f"{{{ns['m']}}}t"))
+                elif v is None:
+                    continue
+                elif t == "s":
+                    val = shared[int(v.text)]
+                else:
+                    val = v.text or ""
+                    if re.fullmatch(r"-?\d+\.0+", val):
+                        val = val.split(".")[0]
+                cells[(int(row.get("r")) - 1, col(c.get("r")))] = val
+        for m in root.iter(f"{{{ns['m']}}}mergeCell"):
+            a, b = m.get("ref").split(":")
+            (r0, c0), (r1, c1) = [(int(re.search(r"\d+", x)[0]) - 1, col(x)) for x in (a, b)]
+            for r in range(r0, r1 + 1):
+                for cc in range(c0, c1 + 1):
+                    cells.setdefault((r, cc), cells.get((r0, c0), ""))
+        if not cells:
+            out.append((sh.get("name"), []))
+            continue
+        nr, nc = max(r for r, _ in cells) + 1, max(c for _, c in cells) + 1
+        out.append((sh.get("name"), [[cells.get((r, c), "") for c in range(nc)] for r in range(nr)]))
+    return out
 
 
 def lark_fetch(doc_url):

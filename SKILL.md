@@ -1,11 +1,14 @@
 ---
 name: lights-out-factory
-description: 黑灯工厂：短视频混剪每日批量生产的标准流程模板（排期 → brief → Agent 写底稿 → 机器 QC → 人审 → Clipo Remix 批量生成、渲染、AI 审核 → 补够数 → 分享链接交付）。这是给各业务复制改造的模板，自带一个离线示例业务 `example`。用户说「跑今天的排期」「今天的脚本」「审完了，开始生产」「看下今天生产结果」「今天到哪了」「黑灯工厂」时使用；复制成自己业务的 skill 后，把这段描述改成你们业务的说法。
+description: 黑灯工厂：短视频混剪每日批量生产的标准流程模板，也用来给新业务建它自己的 skill。业务同学把排期、产品资料、QC、旧脚本等表格丢过来并描述自己的流程时，照 references/onboarding.md 建出这个业务专属的 skill；也能直接跑自带的示例业务（排期 → brief → Agent 写底稿 → 机器 QC → 人审 → Clipo Remix 批量生成、渲染、AI 审核 → 补够数 → 分享链接交付）。用户说「帮我们业务建一个 skill」「这是我们的排期和资料，帮我搭流程」「新业务接黑灯工厂」「黑灯工厂」时使用。
 ---
 
 # 黑灯工厂：每日批量混剪
 
-**这是模板。** 每个业务整份复制一套，改成自己的（[references/adapt.md](references/adapt.md)）；开工前要拿到哪些资料见 [references/intake.md](references/intake.md)。仓库自带一个虚构的示例业务 `example`（去油喷雾），资料是本地文件，①~⑦ 全程离线能跑。
+**这是模板，有两种用法：**
+
+1. **给一个业务建它自己的 skill**（最常用）：业务同学把手上的表全塞过来、讲清自己的流程，照 [references/onboarding.md](references/onboarding.md) 做：`inspect_sources.py` 看清每份资料 → 一次问清流程 → `new_business.py` 建出新 skill → 把资料填进它的 config → 用真实的一天跑通 → 用户认可后交出去。新 skill 建在自己的目录里，不改这个模板
+2. **直接跑**：下面的九步流程。仓库自带一个虚构的示例业务 `example`（去油喷雾），资料是本地文件，①~⑦ 全程离线能跑
 
 排期上每一行 = 店铺 / 产品 × 内容方向 × 测试卖点 × 测试人群 × 数量。**每 `brief_size` 条一个 brief，一个 brief = 一条底稿**。平台按底稿每段都改写出多种说法；平台 AI 审核通过、成片自查也没问题的才算可交付。
 
@@ -29,6 +32,7 @@ description: 黑灯工厂：短视频混剪每日批量生产的标准流程模�
 
 | 文件 | 用途 |
 |---|---|
+| [references/onboarding.md](references/onboarding.md) | 给新业务建 skill 的步骤（Agent 照做） |
 | [references/intake.md](references/intake.md) | 接入清单：排期、客户 brief、产品资料、QC、范本、平台准备、交付规格，各写进哪里 |
 | [references/adapt.md](references/adapt.md) | 复制模板改成自己的业务：config、范本、写法、流程怎么改 |
 | [references/writing.md](references/writing.md) | ④ 写法：骨架、开头、固定说法、每句几个说法、硬性要求、热梗 |
@@ -44,7 +48,7 @@ description: 黑灯工厂：短视频混剪每日批量生产的标准流程模�
 把 config `sources` 里的每份资料拉到 `$R/sources/`（飞书链接、网页、本地文件都行）。QC 文档和上次比有变化，新卡审词、新机制先改 config（改机制更新 `verified_on`）。
 
 **② 拆 brief** `parse_schedule.py --config $C --run $R --date 2026-11-20`
-核对打印的表，店铺都映射到产品；找不到当天的行就停，告诉用户排期没更新。没有排期表的业务按 `daily_quota` 直接拆。用户只要某个产品时加 `--product`。
+排期的表头和日期写法自动认（认不出的列在 `schedule.columns` 写），排期里其它列原样带进任务卡。核对打印的表，产品都映射上；找不到当天的行就停，告诉用户排期没更新。没有排期表的业务按 `daily_quota` 直接拆；任务在对话里给的，Agent 写成 JSON 清单用 `--tasks`。用户只要某个产品时加 `--product`。
 
 **③ 平台体检** `clipo_batch.py preflight --config $C --run $R`
 查平台上每个产品：能不能打开、有没有可用素材、风险切片、产品描述里机制对不对、有没有自己的建脚本提示词、提示词里写的音效贴图分类平台上有没有、审核提示词的产品名对不对。有问题告诉用户去平台改，不自己改平台。

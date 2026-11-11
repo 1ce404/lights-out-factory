@@ -9,14 +9,21 @@
 
 从联合利华（清扬、力士）千川混剪的日常生产里抽出来，去掉了品牌数据，规则都放进 config。
 
-## 怎么用：每个业务整份复制一套
+## 怎么用：把资料交给 agent，它给你建一个自己业务的 skill
 
-1. **先问齐资料**：[references/intake.md](references/intake.md) —— 排期、客户 brief、产品资料、QC 标准、团队范本、平台上的产品和提示词、交付命名，各写进哪里
-2. **复制改造**：[references/adapt.md](references/adapt.md) —— 改 config、放范本、改写法，必要时改流程
-3. **跑起来**：对 agent 说「跑今天的排期」「审完了，开始生产」「今天到哪了」。流程见 [SKILL.md](SKILL.md)
+1. 把这个 skill 装到你的 agent 上（Claude Code：`~/.claude/skills/lights-out-factory/`；Codex：`~/.codex/skills/lights-out-factory/`）
+2. 对 agent 说「帮我们业务建一个 skill」，把手上的表全丢过去（排期、产品卖点、QC 标准、以前的脚本、交付命名样例……xlsx / csv / 飞书链接都行），再讲清你们的流程
+3. agent 照 [references/onboarding.md](references/onboarding.md)：看清每份资料 → 一次问清流程里看不出来的事 → 建出一个新的 skill 目录（只属于你们业务）→ 用真实的一天写一条脚本给你看 → 你认可了就交给你
+
+之后每天对 agent 说「跑今天的排期」「审完了，开始生产」就用你们自己的 skill。新 skill 里的脚本和文档都是你们自己的，想怎么改就怎么改（[references/adapt.md](references/adapt.md)）。
+
+排期表不用改格式：表头含日期 / 产品 / 方向 / 卖点 / 人群 / 数量这些字的列自动认，`11.20`、`11月20日`、`2026/11/20`、Excel 日期都认，标题行、合并单元格、多个 sheet 都行，其它列（达人、参考视频、备注）原样带给写稿的 agent。没有排期表也行：每天固定条数，或每次在对话里说。
+
+手动建也可以：
 
 ```bash
-git clone https://github.com/1ce404/lights-out-factory.git my-business-factory
+python3 -I scripts/new_business.py --key dove --brand 多芬 --out ~/skills/dove-daily-batch \
+    --products bodywash=多芬沐浴露 --sources <你们的文件>
 ```
 
 先用自带的示例业务试一遍（离线，不连平台、不扣额度）：
@@ -47,7 +54,7 @@ Python 3.9+（只用标准库）；能访问 Clipo Remix（⑧ ⑨）。资料�
 | `config/example/degreaser.json` | 产品配置模板 |
 | `gold/example.json` | 范本库模板 |
 | `examples/sources/` | 示例业务的排期、QC、脚本合集（本地文件） |
-| `scripts/` | 拉资料、拆排期、写稿任务卡、lint、待审文档、Clipo 批量生产和分享、配音检测 |
-| `references/` | 接入清单、改造指南、写法、QC、平台接口 |
+| `scripts/` | 看资料（`inspect_sources.py`）、建新业务（`new_business.py`）、拉资料、拆排期、写稿任务卡、lint、待审文档、Clipo 批量生产和分享、配音检测 |
+| `references/` | 建业务 skill 的步骤（onboarding）、接入清单、改造指南、写法、QC、平台接口 |
 
 每天的运行数据写在 `runs/YYYYMMDD/`，不进仓库。
