@@ -1,0 +1,51 @@
+{
+  "_readme": "一个产品一份，文件名就是 product_key（和 store_to_product 的值一致）。这里的每条事实都要有出处（产品资料、客户 brief、QC 文档），在 _note 里写清楚。逐项说明见 references/adapt.md",
+  "_note": "示例产品，数据是编的。真实业务：依据写哪份资料、哪天核对的",
+  "full_name": "示例去油喷雾",
+  "short_name": "去油喷雾",
+  "name_aliases": ["示例去油喷雾"],
+  "collection_labels": ["去油喷雾"],
+  "clipo_product_id": "REPLACE_WITH_PLATFORM_PRODUCT_ID",
+  "_clipo_note": "GET /api/v1/products?limit=100 按名字找，再跑 preflight 确认能打开、有切片、有提示词",
+  "default_selling_point": "泡沫去油",
+  "selling_points": {
+    "泡沫去油": {"say": "一喷出泡沫，挂在油污上不往下流；静置一会儿一擦就掉", "must_mention": ["泡沫"]},
+    "不伤手": {"say": "温和配方，不刺鼻；擦完手不干涩", "must_mention": ["不刺鼻"]}
+  },
+  "mechanism": {
+    "spoken": ["拍一发二", "进直播间"],
+    "allowed_numbers": ["拍一发二"],
+    "source": "示例：客户 11.1 brief 的直播机制",
+    "verified_on": "2026-11-18"
+  },
+  "cta_required": ["直播间"],
+  "warn_words": ["强力", "瞬间"],
+  "banned_words": ["除菌", "杀菌"],
+  "_banned_words_note": "这个产品不能写的词（比如没有资质的功效）",
+  "allow_words": [],
+  "foreign_claims": ["地板", "玻璃"],
+  "_foreign_note": "同品牌其它产品的卖点词，写到这个产品上算串系列",
+  "keep_terms": ["示例去油喷雾"],
+  "_keep_note": "AI 改写后必须逐字保留的术语",
+  "audience_note": "家里做饭的人，口吻像朋友分享，男女都行",
+  "speaker_warn": [],
+  "voice_gender": "男女",
+  "footage": {
+    "hook": "灶台、油烟机上的厚油污特写（油污特写）",
+    "product": "手拿瓶子、瓶身特写（产品外观）",
+    "selling": "喷出白色泡沫挂在油污上（喷泡沫）",
+    "effect": "抹布一擦露出干净台面（擦干净）",
+    "cta": "多瓶摆在台面（CTA）"
+  },
+  "footage_tags": ["油污特写", "产品外观", "喷泡沫", "擦干净", "CTA"],
+  "_footage_note": "footage 写平台素材里实际有的画面（任务卡会列出，文案每句要接得住）；footage_tags 是平台上这个产品有可用切片的标签，brief 分段的 visual_tags 只能从这里挑",
+  "ingredient_terms": [],
+  "ingredient_footage": [],
+  "_ingredient_note": "说到成分 / 技术的句子自动配这些画面标签（比如质地特写）",
+  "naming_code": null,
+  "naming_grams": null,
+  "rules": [
+    "示例：开头写厨房油污的状态，不写具体某道菜",
+    "示例：不写和别的品牌对比"
+  ]
+}

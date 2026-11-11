@@ -1,0 +1,96 @@
+{
+  "_readme": "一个业务一份。复制这个文件改成 config/<你的业务>.json，同名目录 config/<你的业务>/ 放每个产品一份。所有以 _ 开头的字段是说明，脚本不读。逐项说明见 references/adapt.md",
+  "brand": "示例品牌",
+  "brand_key": "example",
+  "brand_tag": "DEMO",
+  "_brand_note": "brand 用在文案和平台审核提示词核对里；brand_key 是文件名和 brief 归属（只用字母）；brand_tag 用在交付链接命名",
+  "name_strip": [],
+  "_name_strip_note": "preflight 比对平台审核提示词里的产品名时要去掉的前缀（品牌名、brand_tag 已默认去掉），比如英文品牌名",
+
+  "sources": {
+    "schedule": "examples/sources/schedule.md",
+    "recent_scripts": "examples/sources/recent_scripts.md",
+    "qc": "examples/sources/qc.md",
+    "_note": "每天 ① 拉到 runs/<日期>/sources/<key>.txt。值可以是飞书链接（需要 lark-cli）、任意 http(s) 链接或本地文件路径；没有就填 null。history_ 开头的只在 --history 时拉。想加别的资料（客户需求、竞品稿、直播排期），在这里加一个 key 就会一起拉下来"
+  },
+  "schedule": {
+    "columns": {"日期": "date", "店铺": "store", "内容方向": "direction", "测试卖点": "selling_point", "测试人群": "audience", "数量": "quantity"},
+    "date_formats": ["{m}.{d}", "{m}/{d}", "{yyyy}-{mm}-{dd}"],
+    "_note": "排期表的表头 → 字段（date / store / direction / selling_point / audience / quantity 必须能对上），以及日期列的写法。表格可以是飞书表格或 markdown 竖线表，按 ### 小标题分段"
+  },
+  "daily_quota": null,
+  "_daily_quota_note": "没有排期表的业务改成每天固定条数，如 [{\"product\": \"degreaser\", \"direction\": \"日常\", \"quantity\": 20}]；有值时不读排期",
+  "store_to_product": {
+    "示例旗舰店": "degreaser",
+    "去油喷雾": "degreaser"
+  },
+  "brief_prefix": "B",
+  "brief_size": 10,
+  "generate_factor": 2,
+  "generate_chunk": 15,
+  "_generate_note": "每 brief_size 条一个 brief；一次生成 排期 × generate_factor 条（AI 审核会驳回一部分），每轮最多 generate_chunk 条（平台一轮全有全无、组装限时）",
+
+  "writing": {
+    "subject": "厨房油污",
+    "opening_types": ["反问", "判断", "金句", "场景引子", "对话", "热梗", "直戳问题状态"],
+    "opening_deal_ok_directions": ["爆款复刻"],
+    "after_use_bad_regex": "(下班|晚上|回家|一天下来|过了一会|没多久|又)[^。！？]{0,8}(油|脏|黏|黄|顽固)",
+    "_note": "写法规则。subject 是开头要落到的「使用者的问题」，用这个品类的说法；其它不写就用默认（见 scripts/common.py 的 WRITING_DEFAULTS：开头禁价格机制、产品出现后不写问题又回来、不写时间线、改写要求）"
+  },
+  "banned_words": {
+    "error": ["首选", "唯一", "顶级", "国家级", "全网", "领先", "史上", "最低价", "历史最低", "原价", "性价比", "立即见效", "一次解决", "根治", "100%", "零残留"],
+    "warn": ["长效", "持久", "临床", "专家", "医生", "无毒"],
+    "regex_error": ["最(?!近|后|初|终|早|晚)", "第一(?!次|步|眼|天|口)", "(?<![第\\d.])\\d+\\s*(小时|天|周)"],
+    "regex_warn": ["(?<![第每])[一二三四五六七八九十两几]+\\s*(个)?(小时|天|周)(?!天|下来|到晚)"],
+    "scene_warn": [],
+    "allow_exceptions": [],
+    "_note": "error 出现就不能交给人审；warn 给审核人看。广告法通用词保留，加上你们 QC 文档和客户近期卡审的词"
+  },
+  "copy_limits": {
+    "clause_hard_max": 20,
+    "clause_warn_max": 12,
+    "clause_warn_min": 1,
+    "combo_chars_min": 75,
+    "combo_chars_max": 150,
+    "chars_per_second": 5.5,
+    "history_days": 7,
+    "name_not_before": 2,
+    "opening_similar_max": 0.5,
+    "_note": "短句按显示宽度（汉字 1、半角 0.5），>12 提醒、>20 报错；整条 75~150 字约 15~25 秒；产品名尽量不在前 2 段；开头两句和范本 / 近 7 天 / 当天其它稿相似度 >50% 报错"
+  },
+  "campaign": null,
+  "_campaign_note": "大促节点，如 {\"name\": \"双十一\", \"until\": \"2026-11-11\"}：期间每条要带节点词，交付命名里的 {campaign} 也用它",
+
+  "clipo": {
+    "base_url": "https://clipo-remix.tezign.com",
+    "_note": "配音、BGM、字幕、画面、贴图、音效、改写和 AI 审核标准都在平台产品提示词（video_script_create / video_script_rewrite / video_cut_review）里，由业务同学在平台写好"
+  },
+  "watermark": {"add": true, "position": "bottom_right", "mode": "global", "_note": "AI 生成合规水印。mode 必须 global，平台默认 segments 只给 AI 生成的切片打"},
+  "tts": {
+    "voices": null,
+    "voices_by_gender": {"女": [], "男": [], "男女": []},
+    "bad_voices": [],
+    "_note": "平台每段单独合成配音，有的音色段与段之间音高差很大，听着像换了人。voices（或按产品 voice_gender 取 voices_by_gender）填实测稳定的音色 id，留空就用平台自己挑的；bad_voices 是测出来不稳 / 配不出来的，成片抽到不算可交付。新音色先用 scripts/voice_check.py 测"
+  },
+  "banned_footage_words": [],
+  "_banned_footage_note": "平台切片描述里出现这些词的画面不能用（成片用到就不算可交付），比如客户说不要的画面",
+
+  "naming": "{date}-{brief_no}-V{n:02d}-{product}-{selling_point}",
+  "delivery_naming": "TZ-{yy}-{date}-{brand_tag}-{product_short}-brief{n}",
+  "delivery_group_naming": "TZ-{yy}-{date}-{brand_tag}",
+  "_naming_note": "naming 是平台脚本标题；delivery_naming 是每个 brief 的分享链接名（客户看的就是它，要准）；delivery_group_naming 是当天的分组名。可用字段：yy yymmdd date(MMDD) brand_tag product_short product_naming naming_code grams campaign video_type content_type keyword(第一句前 5 字) n(当天同产品第几个 brief) brief_no direction",
+  "direction_tags": {
+    "rules": [
+      {"match": ["热点"], "video_type": "AIGC视频", "content_type": "巧用热点"},
+      {"match": ["价格", "机制", "大促"], "video_type": "AIGC视频", "content_type": "原生种草"}
+    ],
+    "default": {"video_type": "AIGC视频", "content_type": "解决问题"},
+    "_note": "按排期「内容方向」匹配，给交付命名里的 {video_type} {content_type}；用不到可以删"
+  },
+  "direction_notes": {},
+  "_direction_notes_note": "排期方向括号里长期沿用的标签 → 团队实际怎么写，任务卡会显示",
+  "review": {"doc_parent_token": null, "notify_chat_id": null},
+  "open_questions": [
+    {"about": "degreaser", "q": "示例：大促后 CTA 换成什么说法？"}
+  ]
+}

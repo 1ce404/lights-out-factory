@@ -1,0 +1,21 @@
+{
+  "_readme": "范本库：团队交付过、客户认可的稿。任务卡按产品和方向列出来当参考，lint 拿它查开头撞车。用户说好的新稿加进来，status 写 confirmed；没确认过的写 provisional",
+  "scripts": [
+    {
+      "id": "DEMO-1101-B01",
+      "product": "degreaser",
+      "direction": "解决问题",
+      "selling_point": "泡沫去油",
+      "status": "provisional",
+      "speaker": "朋友分享",
+      "why": "开头直戳油污状态 → 引产品 → 卖点 → 擦完的结果 → 机制 + CTA",
+      "beats": [
+        {"role": "hook", "text": "油烟机上那层黄油，你是不是擦了好几遍还发黏？"},
+        {"role": "product", "text": "试试示例去油喷雾。"},
+        {"role": "selling", "text": "一喷就是厚厚的泡沫，挂在油污上不往下流。"},
+        {"role": "effect", "text": "等一会儿拿抹布一擦，台面清清爽爽。"},
+        {"role": "cta", "text": "现在拍一发二，进直播间带走！"}
+      ]
+    }
+  ]
+}
